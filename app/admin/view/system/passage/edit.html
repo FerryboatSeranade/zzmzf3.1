@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>通道编辑</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" href="__STATIC__/lib/layui-v2.6.3/css/layui.css" media="all">
+    <link rel="stylesheet" href="__STATIC__/css/public.css" media="all">
+    <link rel="stylesheet" href="__STATIC__/lib/font-awesome-4.7.0/css/font-awesome.min.css" media="all">
+    <style>
+        #hang_free_img{
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="layuimini-container">
+        <div class="layuimini-main">
+            <div class="layui-form layuimini-form">
+                <input type="hidden" name="id" value="{$row.id}">
+                <input type="hidden" name="status" value="{$row.status}">
+                <input type="hidden" name="hang_free" value="{$row.hang_free}">
+                <input type="hidden" name="money_change" value="{$row.money_change}">
+                <input type="hidden" name="cookie" value="{$row.cookie}">
+                <div class="layui-form-item">
+                    <label class="layui-form-label required">支付模式</label>
+                    <div class="layui-input-block">
+                        <select name="type" lay-verify="required" lay-search="">
+                            <option value="">直接选择或搜索选择</option>
+                            {foreach $payType as $k => $v}
+                            <option value="{$k}" {if $k == $row.type}selected{/if}>{$v}</option>
+                            {/foreach}
+                        </select>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label required">通道模式</label>
+                    <div class="layui-input-block">
+                        <select name="code" lay-verify="required" lay-search="">
+                            <option value="">直接选择或搜索选择</option>
+                            {foreach $payCode as $k => $v}
+                            <option value="{$k}" {if $k == $row.code}selected{/if}>{$v}</option>
+                            {/foreach}
+                        </select>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">支付用户ID</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="zf_pid" placeholder="请输入支付用户ID" value="{$row.zf_pid}" class="layui-input">
+                        <tip>支付宝填写（使用免挂会自动填写）可免输入，数字人民币填写钱包编码</tip>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">无金额收款码</label>
+                    <div class="layui-input-block layuimini-upload">
+                        <input name="ewm" class="layui-input layui-col-xs6" placeholder="请上传收款码" value="{$row.ewm}">
+                        <div class="layuimini-upload-btn">
+                            <label><a class="layui-btn layui-btn-normal"><i class="fa fa-list"></i>
+                                选择</a><input type="file" name="Filedata" id="test8" style="display: none;"></label>
+                            <span><a class="layui-btn" id="test9"><i class="fa fa-upload"></i> 上传</a></span>
+                        </div>
+                        <tip>如果遇到解码失败，请到<a href="https://cli.im/deqr/" target="_blank">https://cli.im/deqr/</a>，复制解码后的地址
+                        </tip>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">支付宝免递增金额</label>
+                    <div class="layui-input-block">
+                        <input type="checkbox" id="money_change" lay-skin="switch" lay-text="开启|禁用" lay-filter="money_change" {if $row.money_change == 1}checked{/if}>
+                        <tip style="vertical-align: middle;">开启后监控端必须开启免递增金额</tip>
+                    </div>
+                </div>
+                <div id="hang_free_box">
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">免挂</label>
+                        <div class="layui-input-block">
+                            <input type="checkbox" id="hang_free" lay-skin="switch" lay-text="开启|禁用"
+                                lay-filter="hang_free" {if $row.hang_free == 1}checked{/if}>
+                            <tip style="vertical-align: middle;display: inline-block;
+    margin-top: 10px;
+    line-height: 15px;
+    font-size: 10px;
+    color: #a29c9c;">使用监控端云端模式会自动更新CK，监控端不用开心跳</tip>
+                        </div>
+                    </div>
+                    <div class="layui-form-item" id="hang_free_img">
+                        <label class="layui-form-label">登录二维码</label>
+                        <div class="layui-input-block">
+                            <img src="" style="width: 200px;">
+                        </div>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">区分方式</label>
+                    <div class="layui-input-block">
+                        <select name="pay_qf">
+                            <option value="0" {if $row.pay_qf == 0}selected{/if}>金额递增</option>
+                            <option value="1" {if $row.pay_qf == 1}selected{/if}>金额递减</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">支付宝转账类型</label>
+                    <div class="layui-input-block">
+                        <select name="transfer">
+                            <option value="0">关闭</option>
+                            <option value="1" {if $row.transfer == 1}selected{/if}>个人转账</option>
+                            <option value="3" {if $row.transfer == 3}selected{/if}>转入小钱袋</option>
+                            <option value="2" {if $row.transfer == 2}selected{/if}>扫码转账</option>
+                        </select>
+                        <tip>个人转账和转入小钱袋不支持APP监控，关闭后就是收款码</tip>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">备注</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="remarks" placeholder="请输入备注" value="{$row.remarks}" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label required">状态</label>
+                    <div class="layui-input-block">
+                        <input type="checkbox" lay-skin="switch" lay-text="开启|禁用" lay-filter="status" {if $row.status == 1}checked{/if}>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <div class="layui-input-block">
+                        <button class="layui-btn layui-btn-normal" lay-submit lay-filter="saveBtn">确认保存</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="__STATIC__/lib/layui-v2.6.3/layui.js" charset="utf-8"></script>
+    <script>
+        layui.use(['form','upload'], function () {
+            var form = layui.form,
+                layer = layui.layer,
+                $ = layui.$,
+                upload = layui.upload;
+
+            //监听提交
+            form.on('submit(saveBtn)', function (data) {
+                $.post("{:url('system.passage/edit')}", data.field, function (res) {
+                    icon = res.code == 1 ? 1 : 2;
+                    layer.msg(res.msg, { time: 1500, icon: icon }, function () {
+                        if (res.code == 1) {
+                            window.parent.location.reload();
+                            index = parent.layer.getFrameIndex(window.name);
+                            parent.layer.close(index);
+                        }
+                    })
+                })
+
+                return false;
+            });
+
+            // 监听状态事件
+            form.on('switch(status)', function (obj) {
+                // console.log(obj);
+                // layer.tips(this.value + ' ' + this.name + '：'+ obj.elem.checked, obj.othis);
+                var status = obj.elem.checked ? 1 : 0;
+                $('[name="status"]').val(status);
+            });
+            form.on('switch(money_change)', function (obj) {
+                // console.log(obj);
+                // layer.tips(this.value + ' ' + this.name + '：'+ obj.elem.checked, obj.othis);
+                var status = obj.elem.checked ? 1 : 0;
+                $('[name="money_change"]').val(status);
+            });
+            form.on('switch(hang_free)', function (obj) {
+                // console.log(obj);
+                // layer.tips(this.value + ' ' + this.name + '：'+ obj.elem.checked, obj.othis);
+                var status = obj.elem.checked ? 1 : 0;
+                if(status == 1){
+                    $("#hang_free_img").show();
+                    $.post('{:url("system.passage/hangFree")}',{act: 'login',type: $('[name="type"]').val()},function(res){
+                        if(res.code == 1){
+                            $('[name="hang_free"]').val(status);
+                            if($('[name="type"]').val() == 3){
+                                $("#hang_free_img img").attr('src','data:image/jpg/png/gif;base64,'+res.data.qrcodeurl);
+                            }else{
+                                $("#hang_free_img img").attr('src','/enQrcode?url='+res.data.qrcodeurl);
+                            }
+                            var t2 = window.setInterval(function() {
+                                $.ajaxSettings.async = false;
+                                $.post('{:url("system.passage/hangFree")}',{act: 'status',type: $('[name="type"]').val(),loginid: res.data.loginid},function(res2){
+                                    // console.log(res2);
+                                    if(res2.code == 1){
+                                        $('[name="cookie"]').val(res2.data.cookie);
+                                        if(typeof res2.data.ali_uid !== "undefined"){
+                                            $('[name="zf_pid"]').val(res2.data.ali_uid);
+                                        }
+                                        layer.msg('更新成功',{time: 1500,icon: 1},function(){
+                                            window.clearInterval(t2);
+                                        });
+                                    }
+                                },'json')
+                                $.ajaxSettings.async = true;
+                            },1500)
+                        }else{
+                            layer.msg(res.msg,{time: 1500,icon: 2});
+                            $('[name="hang_free"]').val(0);
+                            $('#hang_free').attr('checked',false);
+                            form.render();
+                            $("#hang_free_img").hide();
+                        }
+                    })
+                }else{
+                    $('[name="hang_free"]').val(status);
+                    $("#hang_free_img").hide();
+                }
+            });
+
+            upload.render({
+                elem: '#test8'
+                , url: 'https://upload.api.cli.im/upload.php?kid=cliim' //此处配置你自己的上传接口即可
+                , auto: false
+                //,multiple: true
+                , bindAction: '#test9'
+                , done: function (res) {
+                    // console.log(res);
+                    if(res.status == 1){
+                        $.post('{:url(\'index/detectBinary\')}',{'url': res.data.path},function(res2){
+                            if(res2.status == 1){
+                                $('[name="ewm"]').val(res2.data.qrcode_content);
+                            }else{
+                                layer.msg('解码失败',{time: 1500,icon: 2});
+                            }
+                        },'json')
+                    }else{
+                        layer.msg('上传失败',{time: 1500,icon: 2});
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

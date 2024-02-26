@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>通道管理</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" href="__STATIC__/lib/layui-v2.6.3/css/layui.css" media="all">
+    <link rel="stylesheet" href="__STATIC__/css/public.css" media="all">
+    <link rel="stylesheet" href="__STATIC__/lib/font-awesome-4.7.0/css/font-awesome.min.css" media="all">
+</head>
+<body>
+<div class="layuimini-container">
+    <div class="layuimini-main">
+
+        <fieldset class="table-search-fieldset">
+            <legend>搜索信息</legend>
+            <div style="margin: 10px 10px 10px 10px">
+                <form class="layui-form layui-form-pane" action="">
+                    <div class="layui-form-item">
+                        <div class="layui-inline">
+                            <label class="layui-form-label">时间范围</label>
+                            <div class="layui-input-inline">
+                                <input type="text" id="time" name="time" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <div class="layui-inline">
+                            <label class="layui-form-label">支付模式</label>
+                            <div class="layui-input-inline">
+                                <select name="type" lay-search="">
+                                    <option value="">直接选择或搜索选择</option>
+                                    {foreach $payType as $k => $v}
+                                    <option value="{$k}">{$v}</option>
+                                    {/foreach}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="layui-inline">
+                            <label class="layui-form-label">通道模式</label>
+                            <div class="layui-input-inline">
+                                <select name="code" lay-search="">
+                                    <option value="">直接选择或搜索选择</option>
+                                    {foreach $payCode as $k => $v}
+                                    <option value="{$k}">{$v}</option>
+                                    {/foreach}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="layui-inline">
+                            <label class="layui-form-label">支付用户ID</label>
+                            <div class="layui-input-inline">
+                                <input type="text" name="zf_pid" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <div class="layui-inline">
+                            <label class="layui-form-label">在线状态</label>
+                            <div class="layui-input-inline">
+                                <select name="is_status">
+                                    <option value=""></option>
+                                    <option value="0">离线</option>
+                                    <option value="1">在线</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="layui-inline">
+                            <label class="layui-form-label">状态</label>
+                            <div class="layui-input-inline">
+                                <select name="status">
+                                    <option value=""></option>
+                                    <option value="0">禁用</option>
+                                    <option value="1">开启</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="layui-inline">
+                            <label class="layui-form-label">备注</label>
+                            <div class="layui-input-inline">
+                                <input type="text" name="remarks" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <div class="layui-inline">
+                            <button class="layui-btn layui-btn-primary" lay-submit lay-filter="data-search-btn"><i class="layui-icon"></i> 搜 索</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </fieldset>
+        <table class="layui-hide" id="currentTableId" lay-filter="currentTableFilter"></table>
+    </div>
+</div>
+<!-- 工具栏 -->
+<script type="text/html" id="toolbarDemo">
+  <button class="layui-btn layui-btn-sm layuimini-btn-primary" lay-event="reload"><i class="fa fa-refresh"></i></button>
+<button class="layui-btn layui-btn-normal layui-btn-sm" lay-event="add"><i class="fa fa-plus"></i> 添加</button>
+<button class="layui-btn layui-btn-sm layui-btn-danger" lay-event="delAll"><i class="fa fa-trash-o"></i> 批量删除</button>
+<button class="layui-btn layui-btn-normal layui-btn-sm" lay-event="qrcode"><i class="fa fa-plus"></i> 有金额收款码</button>
+</script>
+<!-- 工具 -->
+<script type="text/html" id="barDemo">
+  <a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="edit">编辑</a>
+  <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+</script>
+<script type="text/html" id="status">
+  {{# if(d.id == 1){ }}
+  <input type="checkbox" name="" value="{{d.id}}" lay-skin="switch" lay-text="开启" lay-filter="status" disabled checked>
+  {{# }else{ }}
+  <input type="checkbox" name="status" value="{{d.id}}" lay-skin="switch" lay-text="开启|禁用" lay-filter="status" {{ d.status == 1 ? 'checked' : '' }}>
+  {{# } }}
+</script>
+<script type="text/html" id="is_status">
+    {{# if(d.is_status == 1){ }}
+        <a class="layui-btn layui-btn-success layui-btn-xs">在线</a>
+    {{# }else{ }}
+        <a class="layui-btn layui-btn-danger layui-btn-xs">离线</a>
+    {{# } }}
+  </script>
+<script src="__STATIC__/lib/layui-v2.6.3/layui.js" charset="utf-8"></script>
+<script src="__STATIC__/js/common.js"></script>
+<script>
+    layui.use(['form', 'table','laydate'], function () {
+        var $ = layui.jquery,
+            form = layui.form,
+            table = layui.table,
+            laydate = layui.laydate;
+
+        //日期时间范围选择
+        laydate.render({ 
+          elem: '#time'
+          ,type: 'datetime'
+          ,range: true
+        });
+
+        table.render({
+            elem: '#currentTableId'
+            ,url:'{:url("system.passage/index")}'
+            ,method:'post'
+            ,toolbar:'#toolbarDemo'
+            ,defaultToolbar: false //去掉右侧工具栏
+            // ,cellMinWidth: 100
+            ,cols: [[
+              {type:'checkbox'}
+              ,{width:100,field:'id',title:'ID',sort: true,align:'center'}
+              ,{width:200,field:'type',title:'支付模式',align:'center'}
+              ,{width:200,field:'code',title:'通道模式',align:'center'}
+              ,{width:200,field:'zf_pid',title:'支付用户ID',align:'center'}
+              ,{width:120,field:'ewm',title:'无金额收款码',align:'center',templet:function(d){
+                if(d.ewm){
+                    return '<button type="button" class="layui-btn layui-btn-xs" src="/enQrcode?url='+d.ewm+'" onclick="showBigImage(this,210,210);">查看</button>';
+                }else{
+                    return '';
+                }
+              }}
+              ,{width:100,field:'balance',title:'当前余额',align:'center'}
+              ,{width:100,field:'succcount',title:'收款笔数',align:'center'}
+              ,{width:100,field:'succprice',title:'收款金额',align:'center'}
+              ,{width:100,field:'is_status',title:'在线状态',align:'center',templet:'#is_status'}
+              ,{width:100,field:'status',title:'状态',templet:'#status',sort:true,align:'center'}
+              ,{width:200,field:'create_time',title:'添加时间',sort:true,align:'center'}
+              ,{width:200,field:'ck_time',title:'CK更新时间',sort:true,align:'center'}
+              ,{width:200,field:'run_time',title:'监控运行时间',sort:true,align:'center'}
+              ,{width:120,title:'APP扫码配置',align:'center',templet:function(d){
+                if(d.old_type !== 3){
+                    return '<button type="button" class="layui-btn layui-btn-xs" src="/enQrcode?url={$appConfig}'+d.id+','+d.old_type+'" onclick="showBigImage(this,210,210);">查看</button>';
+                }else{
+                    return '';
+                }
+              }}
+              ,{width:200,title:'APP手动配置',align:'center',templet:function(d){
+                if(d.old_type !== 3){
+                    return '{$appConfig}'+d.id+','+d.old_type;
+                }else{
+                    return '';
+                }
+              }}
+              ,{width:200,field:'remarks',title:'备注',align:'center'}
+              ,{width:200,title:'操作',toolbar:'#barDemo',align:'center',fixed:'right'}
+            ]]
+            ,page: true
+            ,skin: 'line'
+        });
+
+        // 监听搜索操作
+        form.on('submit(data-search-btn)', function (data) {
+            // console.log(data.field);
+
+            //执行搜索重载
+            table.reload('currentTableId', {
+                page: {
+                    curr: 1
+                }
+                , where: {
+                    search: data.field
+                }
+            }, 'data');
+
+            return false;
+        });
+
+        /**
+         * toolbar监听事件
+         */
+        table.on('toolbar(currentTableFilter)', function (obj) {
+            if (obj.event === 'add') {  // 监听添加操作
+                var index = layer.open({
+                    title: '添加通道',
+                    type: 2,
+                    shade: 0.2,
+                    maxmin:true,
+                    shadeClose: true,
+                    area: ['100%', '100%'],
+                    content: '{:url("system.passage/add")}',
+                });
+                $(window).on("resize", function () {
+                    layer.full(index);
+                });
+            } else if (obj.event === 'delAll') {  // 监听删除操作
+                var checkStatus = table.checkStatus('currentTableId')
+                    , data = checkStatus.data;
+                // console.log(data);
+                if(data == ''){
+                    layer.msg('未选中需要删除的通道',{time: 1500,icon: 2});
+                }else{
+                    layer.confirm('是否批量删除通道', {
+                        btn: ['是的', '取消']
+                    }, function() {
+                        ids = [];
+                        $.each(data, function(i, v) {
+                            ids.push(v['id']);
+                        })
+                        $.post('{:url("system.passage/del")}', { id: ids }, function(res) {
+                            // console.log(res);
+                            var icon = res.code == 0 ? 2 : 1;
+                            layer.msg(res.msg, { time: 1500, icon: icon }, function() {
+                                if (res.code == 1) {
+                                    location.reload();
+                                }
+                            })
+                        })
+                    })
+                }
+            }else if(obj.event == 'reload'){
+                location.reload();
+            }else if(obj.event == 'qrcode'){
+                var index = layer.open({
+                    title: '有金额收款码',
+                    type: 2,
+                    shade: 0.2,
+                    maxmin:true,
+                    shadeClose: true,
+                    area: ['100%', '100%'],
+                    content: '{:url("system.qrcode/index")}',
+                });
+                $(window).on("resize", function () {
+                    layer.full(index);
+                });
+            }
+        });
+
+        //监听表格复选框选择
+        /*table.on('checkbox(currentTableFilter)', function (obj) {
+            console.log(obj)
+        });*/
+
+        table.on('tool(currentTableFilter)', function (obj) {
+            var data = obj.data;
+            // console.log(data);
+            if (obj.event === 'edit') {
+                var index = layer.open({
+                    title: '编辑通道',
+                    type: 2,
+                    shade: 0.2,
+                    maxmin:true,
+                    shadeClose: true,
+                    area: ['100%', '100%'],
+                    content: '{:url("system.passage/edit")}?id='+data.id,
+                });
+                $(window).on("resize", function () {
+                    layer.full(index);
+                });
+            } else if (obj.event === 'del') {
+                layer.confirm('真的删除这行么', function (index) {
+                    $.post('{:url("system.passage/del")}',{id: data.id},function(res){
+                        icon = res.code == 1 ? 1 : 2;
+                        layer.msg(res.msg,{time: 1500,icon: icon},function(){
+                            if(res.code == 1){
+                                location.reload();
+                            }
+                        })
+                    })
+                });
+            }else if(obj.event == 'ewm'){
+                var index = layer.open({
+                    title: '查看二维码',
+                    type: 2,
+                    shade: 0.2,
+                    maxmin:true,
+                    shadeClose: true,
+                    area: ['300px', '300px'],
+                    content: '{:url("system.passage/ewm")}?url='+data.ewm,
+                });
+                $(window).on("resize", function () {
+                    layer.full(index);
+                });
+            }
+        });
+
+        // 监听状态事件
+        form.on('switch(status)', function(obj) {
+            // console.log(obj);
+            // layer.tips(this.value + ' ' + this.name + '：'+ obj.elem.checked, obj.othis);
+            var status = obj.elem.checked ? 1 : 0;
+            $.post('{:url("system.passage/status")}', { status: status, id: this.value }, function(res) {
+                // console.log(res);
+                if (res.code == 0) {
+                    layer.msg(res.msg, { time: 1500, icon: 2 }, function() {
+                        location.reload();
+                    })
+                }
+            })
+        });
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>快捷入口</title>
+    <link rel="stylesheet" href="__STATIC__/lib/layui-v2.6.3/css/layui.css" media="all">
+    <link rel="stylesheet" href="__STATIC__/css/public.css" media="all">
+    <link rel="stylesheet" href="__STATIC__/lib/font-awesome-4.7.0/css/font-awesome.min.css" media="all">
+    <style>
+        .layui-btn:not(.layui-btn-lg):not(.layui-btn-sm):not(.layui-btn-xs) {
+            height: 34px;
+            line-height: 34px;
+            padding: 0 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="layuimini-container">
+        <div class="layuimini-main">
+            <div>
+                <table class="layui-hide" id="currentTableId" lay-filter="currentTableFilter"></table>
+            </div>
+        </div>
+    </div>
+    <!-- 工具栏 -->
+    <script type="text/html" id="toolbarDemo">
+        <button class="layui-btn layui-btn-sm layuimini-btn-primary" lay-event="reload"><i class="fa fa-refresh"></i></button>
+            <button class="layui-btn layui-btn-normal layui-btn-sm" lay-event="add"><i class="fa fa-plus"></i> 添加</button>
+            <button class="layui-btn layui-btn-sm layui-btn-danger" lay-event="delAll"><i class="fa fa-trash-o"></i> 批量删除</button>
+        </script>
+    <!-- 操作列 -->
+    <script type="text/html" id="barDemo">
+        <a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="edit">编辑</a>
+    <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+</script>
+    <script type="text/html" id="status">
+        <input type="checkbox" name="status" value="{{d.id}}" lay-skin="switch" lay-text="开|关" lay-filter="status" {{d.status == 1 ? 'checked' : ''}}>
+</script>
+    <script type="text/html" id="icon">
+        <i class="{{d.icon}}"></i>
+</script>
+    <script src="__STATIC__/lib/layui-v2.6.3/layui.js" charset="utf-8"></script>
+    <script src="__STATIC__/js/lay-config.js?v=1.0.4" charset="utf-8"></script>
+    <script>
+    layui.use(['table', 'form', 'layer'], function() {
+        var $ = layui.jquery;
+        var table = layui.table;
+        var form = layui.form;
+        var layer = layui.layer;
+
+        table.render({
+            elem: '#currentTableId'
+            ,url:'{:url("system.quick/index")}'
+            ,method:'post'
+            ,toolbar:'#toolbarDemo'
+            ,defaultToolbar: false //去掉右侧工具栏
+            // ,cellMinWidth: 100
+            ,cols: [[
+              {type:'checkbox'}
+              ,{field:'id',title:'ID',sort: true,align: 'center'}
+              ,{field:'sort',title:'排序',align: 'center',edit: 'text'}
+              ,{field:'title',title:'权限名称',align: 'center'}
+              ,{field:'icon',title:'图标',align: 'center',templet: '#icon'}
+              ,{field:'href',title:'快捷链接',align: 'center'}
+              ,{field:'remark',title:'备注信息',align: 'center'}
+              ,{field:'create_time',title:'添加时间',sort:true,align: 'center'}
+              ,{field:'status',title:'状态',templet:'#status',sort:true,align: 'center'}
+              ,{title:'操作',toolbar:'#barDemo',align: 'center'}
+            ]]
+            // ,page: true
+            ,skin: 'line'
+        });
+
+        //监听工具条
+        table.on('tool(currentTableFilter)', function(obj) {
+            var data = obj.data;
+            var layEvent = obj.event;
+
+            if (layEvent == 'del') {
+                layer.load(3);
+                $.post('{:url("system.quick/del")}',{id: data.id},function(res){
+                    icon = res.code == 1 ? 1 : 2;
+                    layer.msg(res.msg,{time: 1500,icon: icon},function(){
+                        if(res.code == 1){
+                            location.reload();
+                        }
+                    })
+                    layer.closeAll('loading');
+                })
+            } else if (layEvent == 'edit') {
+                layer.open({
+                    type: 2,
+                    area: ['100%', '100%'],
+                    title: '添加',
+                    content: '{:url("system.quick/edit")}?id='+data.id
+                });
+            }
+        });
+
+        // 监听状态事件
+        form.on('switch(status)', function(obj) {
+            // console.log(obj);
+            // layer.tips(this.value + ' ' + this.name + '：'+ obj.elem.checked, obj.othis);
+            var status = obj.elem.checked ? 1 : 0;
+            $.post('{:url("system.quick/status")}', { status: status, id: this.value }, function(res) {
+                // console.log(res);
+                if (res.code == 0) {
+                    layer.msg(res.msg, { time: 1500, icon: 2 }, function() {
+                        location.reload();
+                    })
+                }
+            })
+        });
+
+        //监听单元格编辑
+        table.on('edit(currentTableFilter)', function(obj) {
+            var value = obj.value //得到修改后的值
+                ,
+                data = obj.data //得到所在行所有键值
+                ,
+                field = obj.field; //得到字段
+            // layer.msg('[ID: ' + data.id + '] ' + field + ' 字段更改值为：' + value);
+            $.post('{:url("system.quick/sort")}', { id: data.id, value: value }, function(res) {
+                if (res.code == 0) {
+                    layer.msg(res.msg, { time: 1500, icon: 2 }, function() {
+                        location.reload();
+                    })
+                }
+            })
+        });
+
+        // 监听工具栏事件
+        table.on('toolbar(currentTableFilter)', function(obj) {
+            var checkStatus = table.checkStatus(obj.config.id);
+            var data = checkStatus.data;
+            // console.log(obj);
+            if (obj.event == 'delAll') {
+                if (data == '') {
+                    layer.msg('未选中需要删除的入口', { time: 1500, icon: 2 });
+                } else {
+                    layer.confirm('是否批量删除入口', {
+                        btn: ['是的', '取消']
+                    }, function() {
+                        ids = [];
+                        $.each(data, function(i, v) {
+                            ids.push(v['id']);
+                        })
+                        $.post('{:url("system.quick/del")}', { id: ids }, function(res) {
+                            // console.log(res);
+                            var icon = res.code == 0 ? 2 : 1;
+                            layer.msg(res.msg, { time: 1500, icon: icon }, function() {
+                                if (res.code == 1) {
+                                    location.reload();
+                                }
+                            })
+                        })
+                    })
+                }
+            } else if (obj.event == 'add') {
+                layer.open({
+                    type: 2,
+                    area: ['100%', '100%'],
+                    title: '添加',
+                    content: '{:url("system.quick/add")}'
+                });
+            } else if (obj.event == 'reload') {
+                location.reload();
+            }
+        })
+    });
+    </script>
+</body>
+
+</html>

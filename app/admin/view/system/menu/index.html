@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>菜单管理</title>
+    <link rel="stylesheet" href="__STATIC__/lib/layui-v2.6.3/css/layui.css" media="all">
+    <link rel="stylesheet" href="__STATIC__/css/public.css" media="all">
+    <link rel="stylesheet" href="__STATIC__/lib/font-awesome-4.7.0/css/font-awesome.min.css" media="all">
+    <style>
+        .layui-btn:not(.layui-btn-lg):not(.layui-btn-sm):not(.layui-btn-xs) {
+            height: 34px;
+            line-height: 34px;
+            padding: 0 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="layuimini-container">
+        <div class="layuimini-main">
+            <div>
+                <!-- <div class="layui-btn-group">
+                    <button class="layui-btn" id="btn-expand">全部展开</button>
+                    <button class="layui-btn layui-btn-normal" id="btn-fold">全部折叠</button>
+                </div> -->
+                <table id="munu-table" class="layui-table" lay-filter="munu-table"></table>
+            </div>
+        </div>
+    </div>
+    <!-- 工具栏 -->
+    <script type="text/html" id="toolbarDemo">
+        <button class="layui-btn layui-btn-sm layuimini-btn-primary" lay-event="reload"><i class="fa fa-refresh"></i></button>
+            <button class="layui-btn layui-btn-normal layui-btn-sm" lay-event="add"><i class="fa fa-plus"></i> 添加</button>
+            <button class="layui-btn layui-btn-sm layui-btn-danger" lay-event="delAll"><i class="fa fa-trash-o"></i> 批量删除</button>
+        </script>
+    <!-- 操作列 -->
+    <script type="text/html" id="auth-state">
+        <a class="layui-btn layui-btn-xs layui-btn-normal" lay-event="add">添加下级</a>
+        <a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="edit">编辑</a>
+    <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+</script>
+    <script type="text/html" id="status">
+        <input type="checkbox" name="status" value="{{d.id}}" lay-skin="switch" lay-text="开|关" lay-filter="status" {{d.status == 1 ? 'checked' : ''}}>
+</script>
+    <script type="text/html" id="icon">
+        <i class="{{d.menuIcon}}"></i>
+</script>
+    <script src="__STATIC__/lib/layui-v2.6.3/layui.js" charset="utf-8"></script>
+    <script src="__STATIC__/js/lay-config.js?v=1.0.4" charset="utf-8"></script>
+    <script>
+    layui.use(['table', 'treetable', 'form', 'layer'], function() {
+        var $ = layui.jquery;
+        var table = layui.table;
+        var treetable = layui.treetable;
+        var form = layui.form;
+        var layer = layui.layer;
+
+        // 渲染表格
+        layer.load(2);
+        treetable.render({
+            treeColIndex: 1,
+            treeSpid: 0,
+            treeIdName: 'authorityId',
+            treePidName: 'parentId',
+            elem: '#munu-table',
+            url: '{:url("system.menu/index")}',
+            page: false,
+            toolbar: '#toolbarDemo',
+            defaultToolbar: false, //去掉右侧工具栏
+            skin: 'line',
+            cols: [
+                [
+                    { type: 'checkbox' },
+                    { field: 'authorityName', width: 250, title: '权限名称' },
+                    { field: 'menuIcon', width: 80, align: 'center', title: '图标', templet: '#icon' },
+                    { field: 'menuUrl', minWidth: 120, title: '菜单url' },
+                    {
+                        field: 'isMenu',
+                        width: 80,
+                        align: 'center',
+                        templet: function(d) {
+                            if (d.isMenu == 0) {
+                                return '<span class="layui-badge layui-bg-blue">导航</span>';
+                            } else {
+                                return '<span class="layui-badge-rim">菜单</span>';
+                            }
+                        },
+                        title: '类型'
+                    },
+                    { field: 'status', title: '状态', width: 85, templet: '#status',align: 'center' },
+                    { field: 'orderNumber', width: 80, title: '排序', edit: 'text' },
+                    { templet: '#auth-state', width: 200, align: 'center', title: '操作' }
+                ]
+            ],
+            done: function() {
+                layer.closeAll('loading');
+            }
+        });
+
+        $('#btn-expand').click(function() {
+            treetable.expandAll('#munu-table');
+        });
+
+        $('#btn-fold').click(function() {
+            treetable.foldAll('#munu-table');
+        });
+
+        //监听工具条
+        table.on('tool(munu-table)', function(obj) {
+            var data = obj.data;
+            var layEvent = obj.event;
+
+            if (layEvent == 'del') {
+                layer.load(3);
+                $.post('{:url("system.menu/del")}',{id: data.id},function(res){
+                    icon = res.code == 1 ? 1 : 2;
+                    layer.msg(res.msg,{time: 1500,icon: icon},function(){
+                        if(res.code == 1){
+                            location.reload();
+                        }
+                    })
+                    layer.closeAll('loading');
+                })
+            } else if (layEvent == 'edit') {
+                layer.open({
+                    type: 2,
+                    area: ['100%', '100%'],
+                    title: '添加',
+                    content: '{:url("system.menu/edit")}?id='+data.id
+                });
+            }else if(layEvent == 'add'){
+                layer.open({
+                    type: 2,
+                    area: ['100%', '100%'],
+                    title: '添加',
+                    content: '{:url("system.menu/addsub")}?id='+data.id
+                });
+            }
+        });
+
+        // 监听状态事件
+        form.on('switch(status)', function(obj) {
+            // console.log(obj);
+            // layer.tips(this.value + ' ' + this.name + '：'+ obj.elem.checked, obj.othis);
+            var status = obj.elem.checked ? 1 : 0;
+            $.post('{:url("system.menu/status")}', { status: status, id: this.value }, function(res) {
+                // console.log(res);
+                if (res.code == 0) {
+                    layer.msg(res.msg, { time: 1500, icon: 2 }, function() {
+                        location.reload();
+                    })
+                }
+            })
+        });
+
+        //监听单元格编辑
+        table.on('edit(munu-table)', function(obj) {
+            var value = obj.value //得到修改后的值
+                ,
+                data = obj.data //得到所在行所有键值
+                ,
+                field = obj.field; //得到字段
+            // layer.msg('[ID: ' + data.id + '] ' + field + ' 字段更改值为：' + value);
+            $.post('{:url("system.menu/sort")}', { id: data.id, value: value }, function(res) {
+                if (res.code == 0) {
+                    layer.msg(res.msg, { time: 1500, icon: 2 }, function() {
+                        location.reload();
+                    })
+                }
+            })
+        });
+
+        // 监听工具栏事件
+        table.on('toolbar(munu-table)', function(obj) {
+            var checkStatus = table.checkStatus(obj.config.id);
+            var data = checkStatus.data;
+            // console.log(obj);
+            if (obj.event == 'delAll') {
+                if (data == '') {
+                    layer.msg('未选中需要删除的菜单', { time: 1500, icon: 2 });
+                } else {
+                    layer.confirm('是否批量删除菜单', {
+                        btn: ['是的', '取消']
+                    }, function() {
+                        ids = [];
+                        $.each(data, function(i, v) {
+                            ids.push(v['id']);
+                        })
+                        $.post('{:url("system.menu/del")}', { id: ids }, function(res) {
+                            // console.log(res);
+                            var icon = res.code == 0 ? 2 : 1;
+                            layer.msg(res.msg, { time: 1500, icon: icon }, function() {
+                                if (res.code == 1) {
+                                    location.reload();
+                                }
+                            })
+                        })
+                    })
+                }
+            } else if (obj.event == 'add') {
+                layer.open({
+                    type: 2,
+                    area: ['100%', '100%'],
+                    title: '添加',
+                    content: '{:url("system.menu/add")}'
+                });
+            } else if (obj.event == 'reload') {
+                location.reload();
+            }
+        })
+
+    });
+    </script>
+</body>
+
+</html>

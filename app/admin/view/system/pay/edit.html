@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>支付配置</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" href="__STATIC__/lib/layui-v2.6.3/css/layui.css" media="all">
+    <link rel="stylesheet" href="__STATIC__/css/public.css" media="all">
+    <style>
+        body {
+            background-color: #ffffff;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="layuimini-container">
+        <div class="layuimini-main" id="app">
+            <blockquote class="layui-elem-quote layui-text">
+                SDK：<a href="/SDK.zip" target="_blank">点击下载</a>，支付测试：<a href="/demo.html" target="_blank">点击打开</a>，监控软件：<a href="https://www.zzwws.cn/archives/5736/" target="_blank">点击打开</a><br><br>
+                监控支持范围<br>
+                微信：pc监控、app监控<br>
+                支付宝：pc监控、app监控、免挂<br>
+                QQ：免挂<br>
+                数字人民币：app监控<br>
+            </blockquote>
+            <form id="app-form" class="layui-form layuimini-form">
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label required">网关地址</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="epayurl_ali" lay-verify="required" placeholder="请输入网关地址" value="{$epayurl_ali}" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label required">商户PID</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="epayid_ali" lay-verify="required" placeholder="请输入商户PID" value="{$epayid_ali}" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label required">商户密钥</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="epaykey_ali" lay-verify="required" placeholder="请输入商户密钥" value="{$epaykey_ali}" class="layui-input">
+                    </div>
+                </div>
+
+                <div class="hr-line"></div>
+                <div class="layui-form-item text-center">
+                    <div class="layui-input-block">
+                        <button class="layui-btn layui-btn-normal" lay-submit lay-filter="saveBtn">确认保存</button>
+                    </div>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+
+    <script src="__STATIC__/lib/layui-v2.6.3/layui.js" charset="utf-8"></script>
+    <script>
+        layui.use(['form'], function () {
+            var form = layui.form,
+                layer = layui.layer,
+                $ = layui.$;
+
+            //监听提交
+            form.on('submit(saveBtn)', function (data) {
+                $.post("{:url('system.config/edit')}", data.field, function (res) {
+                    icon = res.code == 1 ? 1 : 2;
+                    layer.msg(res.msg, { time: 1500, icon: icon }, function () {
+                        if (res.code == 1) {
+                            location.reload();
+                        }
+                    })
+                })
+
+                return false;
+            });
+
+        });
+    </script>
+</body>
+
+</html>

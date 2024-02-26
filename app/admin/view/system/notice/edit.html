@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>系统公告编辑</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" href="__STATIC__/lib/layui-v2.6.3/css/layui.css" media="all">
+    <link rel="stylesheet" href="__STATIC__/css/public.css" media="all">
+    <style>
+        body {
+            background-color: #ffffff;
+        }
+    </style>
+</head>
+<body>
+<div class="layui-form layuimini-form">
+    <input type="hidden" name="id" value="{$row.id}">
+    <input type="hidden" name="status" value="{$row.status}">
+    <div class="layui-form-item">
+        <label class="layui-form-label required">标题</label>
+        <div class="layui-input-block">
+            <input type="text" name="title" lay-verify="required" placeholder="请输入标题" value="{$row.title}" class="layui-input">
+            <!-- <tip>填写自己管理账号的名称。</tip> -->
+        </div>
+    </div>
+    <div class="layui-form-item layui-form-text">
+        <label class="layui-form-label required">内容</label>
+        <div class="layui-input-block">
+            <textarea name="content" lay-verify="required" placeholder="请输入内容" class="layui-textarea">{$row.content}</textarea>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label required">状态</label>
+        <div class="layui-input-block">
+            <input type="checkbox" lay-skin="switch" lay-text="开启|禁用" lay-filter="status" {if $row.status == 1}checked{/if}>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <div class="layui-input-block">
+            <button class="layui-btn layui-btn-normal" lay-submit lay-filter="saveBtn">确认保存</button>
+        </div>
+    </div>
+</div>
+<script src="__STATIC__/lib/layui-v2.6.3/layui.js" charset="utf-8"></script>
+<script>
+    layui.use(['form'], function () {
+        var form = layui.form,
+            layer = layui.layer,
+            $ = layui.$;
+
+        //监听提交
+        form.on('submit(saveBtn)', function (data) {
+            $.post("{:url('system.notice/edit')}",data.field,function(res){
+                icon = res.code == 1 ? 1 : 2;
+                layer.msg(res.msg,{time: 1500,icon: icon},function(){
+                    if(res.code == 1){
+                        window.parent.location.reload();
+                        index = parent.layer.getFrameIndex(window.name);
+                        parent.layer.close(index);
+                    }
+                })
+            })
+
+            return false;
+        });
+
+        // 监听状态事件
+        form.on('switch(status)', function(obj) {
+            // console.log(obj);
+            // layer.tips(this.value + ' ' + this.name + '：'+ obj.elem.checked, obj.othis);
+            var status = obj.elem.checked ? 1 : 0;
+            $('[name="status"]').val(status);
+        });
+    });
+</script>
+</body>
+</html>

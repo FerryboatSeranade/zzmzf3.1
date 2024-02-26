@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>管理员管理</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" href="__STATIC__/lib/layui-v2.6.3/css/layui.css" media="all">
+    <link rel="stylesheet" href="__STATIC__/css/public.css" media="all">
+    <link rel="stylesheet" href="__STATIC__/lib/font-awesome-4.7.0/css/font-awesome.min.css" media="all">
+</head>
+<body>
+<div class="layuimini-container">
+    <div class="layuimini-main">
+
+        <fieldset class="table-search-fieldset">
+            <legend>搜索信息</legend>
+            <div style="margin: 10px 10px 10px 10px">
+                <form class="layui-form layui-form-pane" action="">
+                    <div class="layui-form-item">
+                        <div class="layui-inline">
+                            <label class="layui-form-label">时间范围</label>
+                            <div class="layui-input-inline">
+                                <input type="text" id="time" name="time" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <div class="layui-inline">
+                            <label class="layui-form-label">用户名</label>
+                            <div class="layui-input-inline">
+                                <input type="text" name="username" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <div class="layui-inline">
+                            <label class="layui-form-label">角色</label>
+                            <div class="layui-input-inline">
+                                <select name="role" lay-search="">
+                                    <option value="">直接选择或搜索选择</option>
+                                    {foreach $role as $v}
+                                    <option value="{$v.id}">{$v.name}</option>
+                                    {/foreach}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="layui-inline">
+                            <label class="layui-form-label">手机号</label>
+                            <div class="layui-input-inline">
+                                <input type="text" name="phone" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <div class="layui-inline">
+                            <label class="layui-form-label">邮箱</label>
+                            <div class="layui-input-inline">
+                                <input type="text" name="email" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <div class="layui-inline">
+                            <button class="layui-btn layui-btn-primary" lay-submit lay-filter="data-search-btn"><i class="layui-icon"></i> 搜 索</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </fieldset>
+        <table class="layui-hide" id="currentTableId" lay-filter="currentTableFilter"></table>
+    </div>
+</div>
+<!-- 工具栏 -->
+<script type="text/html" id="toolbarDemo">
+  <button class="layui-btn layui-btn-sm layuimini-btn-primary" lay-event="reload"><i class="fa fa-refresh"></i></button>
+<button class="layui-btn layui-btn-normal layui-btn-sm" lay-event="add"><i class="fa fa-plus"></i> 添加</button>
+<button class="layui-btn layui-btn-sm layui-btn-danger" lay-event="delAll"><i class="fa fa-trash-o"></i> 批量删除</button>
+</script>
+<!-- 工具 -->
+<script type="text/html" id="barDemo">
+  <a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="edit">编辑</a>
+  <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+</script>
+<script type="text/html" id="status">
+  {{# if(d.id == 1){ }}
+  <input type="checkbox" name="" value="{{d.id}}" lay-skin="switch" lay-text="开启" lay-filter="status" disabled checked>
+  {{# }else{ }}
+  <input type="checkbox" name="status" value="{{d.id}}" lay-skin="switch" lay-text="开启|禁用" lay-filter="status" {{ d.status == 1 ? 'checked' : '' }}>
+  {{# } }}
+</script>
+<script src="__STATIC__/lib/layui-v2.6.3/layui.js" charset="utf-8"></script>
+<script src="__STATIC__/js/common.js"></script>
+<script>
+    layui.use(['form', 'table','laydate'], function () {
+        var $ = layui.jquery,
+            form = layui.form,
+            table = layui.table,
+            laydate = layui.laydate;
+
+        //日期时间范围选择
+        laydate.render({ 
+          elem: '#time'
+          ,type: 'datetime'
+          ,range: true
+        });
+
+        table.render({
+            elem: '#currentTableId'
+            ,url:'{:url("system.admin/index")}'
+            ,method:'post'
+            ,toolbar:'#toolbarDemo'
+            ,defaultToolbar: false //去掉右侧工具栏
+            // ,cellMinWidth: 100
+            ,cols: [[
+              {type:'checkbox'}
+              ,{field:'id',title:'ID',sort: true,align:'center'}
+              ,{field:'head_img',title:'头像',align:'center',templet:function(d){
+                return '<img src="'+d.head_img+'" style="max-width: 200px; max-height: 40px;" onclick="showBigImage(this);">';
+              }}
+              ,{field:'username',title:'用户名',align:'center'}
+              ,{field:'phone',title:'手机号',align:'center'}
+              ,{field:'email',title:'邮箱',align:'center'}
+              ,{field:'role',title:'角色',align:'center'}
+              ,{field:'create_time',title:'添加时间',sort:true,align:'center'}
+              ,{field:'login_time',title:'登录时间',sort:true,align:'center'}
+              ,{field:'status',title:'状态',templet:'#status',sort:true,align:'center'}
+              ,{title:'操作',toolbar:'#barDemo',align:'center'}
+            ]]
+            ,page: true
+            ,skin: 'line'
+        });
+
+        // 监听搜索操作
+        form.on('submit(data-search-btn)', function (data) {
+            // console.log(data.field);
+
+            //执行搜索重载
+            table.reload('currentTableId', {
+                page: {
+                    curr: 1
+                }
+                , where: {
+                    search: data.field
+                }
+            }, 'data');
+
+            return false;
+        });
+
+        /**
+         * toolbar监听事件
+         */
+        table.on('toolbar(currentTableFilter)', function (obj) {
+            if (obj.event === 'add') {  // 监听添加操作
+                var index = layer.open({
+                    title: '添加管理员',
+                    type: 2,
+                    shade: 0.2,
+                    maxmin:true,
+                    shadeClose: true,
+                    area: ['100%', '100%'],
+                    content: '{:url("system.admin/add")}',
+                });
+                $(window).on("resize", function () {
+                    layer.full(index);
+                });
+            } else if (obj.event === 'delAll') {  // 监听删除操作
+                var checkStatus = table.checkStatus('currentTableId')
+                    , data = checkStatus.data;
+                // console.log(data);
+                if(data == ''){
+                    layer.msg('未选中需要删除的管理员',{time: 1500,icon: 2});
+                }else{
+                    layer.confirm('是否批量删除管理员', {
+                        btn: ['是的', '取消']
+                    }, function() {
+                        ids = [];
+                        $.each(data, function(i, v) {
+                            ids.push(v['id']);
+                        })
+                        $.post('{:url("system.admin/del")}', { id: ids }, function(res) {
+                            // console.log(res);
+                            var icon = res.code == 0 ? 2 : 1;
+                            layer.msg(res.msg, { time: 1500, icon: icon }, function() {
+                                if (res.code == 1) {
+                                    location.reload();
+                                }
+                            })
+                        })
+                    })
+                }
+            }else if(obj.event == 'reload'){
+                location.reload();
+            }
+        });
+
+        //监听表格复选框选择
+        /*table.on('checkbox(currentTableFilter)', function (obj) {
+            console.log(obj)
+        });*/
+
+        table.on('tool(currentTableFilter)', function (obj) {
+            var data = obj.data;
+            // console.log(data);
+            if (obj.event === 'edit') {
+
+                var index = layer.open({
+                    title: '编辑管理员',
+                    type: 2,
+                    shade: 0.2,
+                    maxmin:true,
+                    shadeClose: true,
+                    area: ['100%', '100%'],
+                    content: '{:url("system.admin/edit")}?id='+data.id,
+                });
+                $(window).on("resize", function () {
+                    layer.full(index);
+                });
+            } else if (obj.event === 'del') {
+                layer.confirm('真的删除这行么', function (index) {
+                    $.post('{:url("system.admin/del")}',{id: data.id},function(res){
+                        icon = res.code == 1 ? 1 : 2;
+                        layer.msg(res.msg,{time: 1500,icon: icon},function(){
+                            if(res.code == 1){
+                                location.reload();
+                            }
+                        })
+                    })
+                });
+            }
+        });
+
+        // 监听状态事件
+        form.on('switch(status)', function(obj) {
+            // console.log(obj);
+            // layer.tips(this.value + ' ' + this.name + '：'+ obj.elem.checked, obj.othis);
+            var status = obj.elem.checked ? 1 : 0;
+            $.post('{:url("system.admin/status")}', { status: status, id: this.value }, function(res) {
+                // console.log(res);
+                if (res.code == 0) {
+                    layer.msg(res.msg, { time: 1500, icon: 2 }, function() {
+                        location.reload();
+                    })
+                }
+            })
+        });
+    });
+</script>
+
+</body>
+</html>
